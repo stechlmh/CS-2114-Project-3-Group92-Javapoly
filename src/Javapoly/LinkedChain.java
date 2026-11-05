@@ -1,4 +1,4 @@
-package RizzleEscapeRoom;
+package Javapoly;
 
 /**
  * A generic chain of linked nodes. Use it as the storage inside your
