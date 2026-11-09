@@ -15,13 +15,42 @@ public class GameView
     //~ Constructors ..........................................................
 
     //~Public  Methods ........................................................
-    public boolean triggerPurchase(Player player, Object obj, int price) {
+    public static boolean triggerPurchase(Player player, Object obj, int price) 
+    {
         boolean answer = false;
+        //to be implemented, allow chance to mortgage properties, trade with
+        //players, or sell houses, etc.
         if(player.getMoney() < price) {
-            //to be implemented, allow chance to mortgage properties, trade with
-            //players, or sell houses, etc.
+            //not able to purchase
         }
         //ask if player wants to purchase, if they do then answer = true
         return answer;
+    }
+
+    public static boolean triggerYesNo(Player lander, String string)
+    {
+        boolean answer = false;
+        //to be implemented, asks the player yes/no question, yes = true
+        return answer;
+        
+    }
+
+    public static int triggerPickFromOptions(Player lander, String string,
+        Object[] options)
+    {
+        int choice = options.length - 1;
+        // to be implemented, asks the player to pick from a set of options, 
+        //returns int 0 for first item, int 1 for second, etc
+        return choice;
+    }
+
+    public static void triggerErrorPopup(Player lander, String string)
+    {
+        // to be implemented, triggers popup to tell player something went wrong, press enter to continue
+    }
+
+    public static void triggerPayment(Player payer, Player reciever, int money)
+    {
+        // to be implemented, gives money from the payer to the reciever 
     }
 }
