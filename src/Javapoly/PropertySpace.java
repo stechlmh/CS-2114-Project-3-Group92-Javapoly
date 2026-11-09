@@ -124,7 +124,7 @@ public class PropertySpace extends Space
                 }
             }
             else {
-                //trigger Auction (to be implemented)
+                GameView.triggerAuction(lander, this, price);
             }
         }
         if(lander == owner) {

@@ -53,4 +53,9 @@ public class GameView
     {
         // to be implemented, gives money from the payer to the reciever 
     }
+
+    public static void triggerAuction(Player auctioneer, Object obj, int basePrice)
+    {
+        // to be implemented, auction event, auctioneer doesn't have a chance to purchase
+    }
 }
