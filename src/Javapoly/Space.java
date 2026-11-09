@@ -1,11 +1,12 @@
 package Javapoly;
+
 // -------------------------------------------------------------------------
 /**
  *  Write a one-sentence summary of your class here.
  *  Follow it with additional details about its purpose, what abstraction
  *  it represents, and how to use it.
  * 
- *  @author ?????
+ *  @author maple
  *  @version Nov 5, 2026
  */
 public class Space
@@ -66,7 +67,7 @@ public class Space
     /**
      * Will vary depending on subclass effect
      */
-    public void triggerEffect() {
-        System.out.println(effect);
+    public void triggerEffect(Player lander) {
+        System.out.println(lander.getName(), effect);
     }
 }
