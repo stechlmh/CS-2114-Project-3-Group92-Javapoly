@@ -14,7 +14,7 @@ public class GameState {
     private BoardState board;
     private Player[] turnOrder;
     private int currentTurnIndex;
-    private int activePlayers;
+    private LinkedChain<Player> activePlayers;
 
     // ----------------------------------------------------------
     /**
@@ -34,15 +34,19 @@ public class GameState {
         }
         
         //Initialize players and turn order
-        activePlayers = count;
+        activePlayers = new LinkedChain<Player>();
         for (int i = 0; i < 4; i++) {
             turnOrder[i] = new Player();
+            activePlayers.add(turnOrder[i]);
         }
         currentTurnIndex = 0; 
         
         //Initialize decks
         chanceDeck = initializeDeck("chance");
         communityDeck = initializeDeck("community");
+        
+        //Initialize board
+        board = new BoardState();
         
 
     }
@@ -68,7 +72,7 @@ public class GameState {
      * @return the space the player lands on
      */
     public Space moveCurrentPlayer(int steps) {
-
+        return board.movePlayer(getCurrentPlayer(), steps);
     }
 
 
@@ -125,7 +129,13 @@ public class GameState {
      * Goes to the next players turn
      */
     public void nextTurn() {
-
+        //Do nothing if there's only one player
+        if (activePlayers.size() == 1) {
+            return;
+        }
+        while (!activePlayers.contains(getCurrentPlayer())) {
+            currentTurnIndex = (currentTurnIndex + 1) % 4;
+        }
     }
 
 
@@ -136,14 +146,7 @@ public class GameState {
      * @return true if game is over, false if not
      */
     public boolean isGameOver() {
-        int nonbankruptPlayers = 0;
-        for (Player player : turnOrder) {
-            if (!player.isBankrupt()) {
-                nonbankruptPlayers++;
-            }
-        }
-
-        if (nonbankruptPlayers == 1) {
+        if (activePlayers.size() == 1) {
             return true;
         }
         return false;
@@ -152,11 +155,15 @@ public class GameState {
 
     // ----------------------------------------------------------
     /**
-     * Gets the players that won the game
+     * Gets the player that won the game
      * 
      * @return player that won
      */
     public Player getWinner() {
+        if (isGameOver()) {
+            return activePlayers.get(0);
+        }
+        return null;
 
     }
 
@@ -165,12 +172,14 @@ public class GameState {
     /**
      * Returns the specified player's balance
      * 
-     * @param p
+     * @param player
      * @return balance of player
      */
-    public int getPlayerBalance(Player p) {
-
+    public int getPlayerBalance(Player player) {
+        return player.getMoney();
     }
+    
+    
     //Helper method to initialize card decks
     private Queue<EventCard> initializeDeck(String deckType) {
         
