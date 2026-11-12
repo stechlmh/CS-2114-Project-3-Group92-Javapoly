@@ -68,6 +68,6 @@ public class Space
      * Will vary depending on subclass effect
      */
     public void triggerEffect(Player lander) {
-        System.out.println(lander.getName(), effect);
+        System.out.println(lander.getName() + " " + effect);
     }
 }

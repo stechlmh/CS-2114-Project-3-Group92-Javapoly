@@ -1,61 +1,72 @@
 package Javapoly;
+
+import java.util.Scanner;
+
 // -------------------------------------------------------------------------
 /**
- *  Write a one-sentence summary of your class here.
- *  Follow it with additional details about its purpose, what abstraction
- *  it represents, and how to use it.
+ * Console view for displaying prompts, gameplay messages, and errors.
  * 
- *  @author ?????
- *  @version Nov 5, 2026
+ * @author Thomas
+ * @version Nov 11, 2026
  */
 public class GameView
 {
     //~ Fields ................................................................
+    private Scanner scanner;
 
     //~ Constructors ..........................................................
+    /**
+     * Creates a view reading from standard input.
+     */
+    public GameView()
+    {
+        this(new Scanner(System.in));
+    }
+
+    /**
+     * Creates a view reading from the provided scanner.
+     *
+     * @param scanner input source
+     */
+    public GameView(Scanner scanner)
+    {
+        this.scanner = scanner;
+    }
 
     //~Public  Methods ........................................................
-    public static boolean triggerPurchase(Player player, Object obj, int price) 
+    /**
+     * Displays a prompt and reads one line of input.
+     *
+     * @param prompt the prompt to display
+     * @return the user input, or null if no input remains
+     */
+    public String getInput(String prompt)
     {
-        boolean answer = false;
-        //to be implemented, allow chance to mortgage properties, trade with
-        //players, or sell houses, etc.
-        if(player.getMoney() < price) {
-            //not able to purchase
+        System.out.println(prompt);
+        if (scanner != null && scanner.hasNextLine())
+        {
+            return scanner.nextLine().trim();
         }
-        //ask if player wants to purchase, if they do then answer = true
-        return answer;
+        return null;
     }
 
-    public static boolean triggerYesNo(Player lander, String string)
+    /**
+     * Displays a gameplay message.
+     *
+     * @param message the message to display
+     */
+    public void showMessage(String message)
     {
-        boolean answer = false;
-        //to be implemented, asks the player yes/no question, yes = true
-        return answer;
-        
+        System.out.println(message);
     }
 
-    public static int triggerPickFromOptions(Player lander, String string,
-        Object[] options)
+    /**
+     * Displays an input or game error message.
+     *
+     * @param message the error message to display
+     */
+    public void showError(String message)
     {
-        int choice = options.length - 1;
-        // to be implemented, asks the player to pick from a set of options, 
-        //returns int 0 for first item, int 1 for second, etc
-        return choice;
-    }
-
-    public static void triggerErrorPopup(Player lander, String string)
-    {
-        // to be implemented, triggers popup to tell player something went wrong, press enter to continue
-    }
-
-    public static void triggerPayment(Player payer, Player reciever, int money)
-    {
-        // to be implemented, gives money from the payer to the reciever 
-    }
-
-    public static void triggerAuction(Player auctioneer, Object obj, int basePrice)
-    {
-        // to be implemented, auction event, auctioneer doesn't have a chance to purchase
+        System.out.println("Error: " + message);
     }
 }

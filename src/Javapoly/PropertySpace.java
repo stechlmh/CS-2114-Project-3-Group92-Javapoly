@@ -48,9 +48,13 @@ public class PropertySpace extends Space
     String propertyType;
     //~ Constructors ..........................................................
     @SuppressWarnings("javadoc")
-    PropertySpace(String name, int index, String effect, int price, int[] rent, PropertySpace[] set, String propertyType)
+    public PropertySpace(String name, int index, String effect, int price, int[] rent, PropertySpace[] set, String propertyType)
     {
         super(name, index, effect);
+        if (price < 0)
+        {
+            throw new IllegalArgumentException("Cost cannot be negative");
+        }
         this.price = price;
         this.rent = rent;
         this.houses = 0;
@@ -59,20 +63,53 @@ public class PropertySpace extends Space
         this.set = set;
         this.propertyType = propertyType;
     }
-    
+
+    /**
+     * Creates a simple property space for MVP with purchase cost and base rent.
+     *
+     * @param name property name
+     * @param index board index
+     * @param cost purchase cost
+     * @param baseRent rent amount
+     */
+    public PropertySpace(String name, int index, int cost, int baseRent)
+    {
+        this(name, index, "Property", cost, new int[] { baseRent },
+            new PropertySpace[0], "Color");
+        if (baseRent < 0)
+        {
+            throw new IllegalArgumentException("Rent cannot be negative");
+        }
+    }
+
     //~Public  Methods ........................................................
     @SuppressWarnings("javadoc")
     public int getPrice() {
         return price;
     }
+
+    @SuppressWarnings("javadoc")
+    public int getCost() {
+        return price;
+    }
+
     @SuppressWarnings("javadoc")
     public void setPrice(int price) {
         this.price = price;
     }
     
     @SuppressWarnings("javadoc")
-    public int[] getRent() {
+    public int[] getRentArray() {
         return rent;
+    }
+
+    @SuppressWarnings("javadoc")
+    public int getRent() {
+        if (rent == null || rent.length == 0) {
+            return 0;
+        }
+        int idx = Math.max(0, Math.min(houses, rent.length - 1));
+        return rent[idx];
     }
     @SuppressWarnings("javadoc")
     public void setRent(int[] rent) {
@@ -107,79 +144,8 @@ public class PropertySpace extends Space
     }
     
     public void triggerEffect(Player lander) {
-        if(!purchased) {
-            if(GameView.triggerPurchase(lander, this, price)) {
-                purchased = true;
-                owner = lander;
-                boolean ownsSet = true;
-                for(int i = 0; i < set.length; i += 1) {
-                    if(!set[i].getOwner().equals(owner)) {
-                        ownsSet = false;
-                    }
-                }
-                if(ownsSet) {
-                    for(int i = 0; i < set.length; i += 1) {
-                        set[i].setHouses(0);
-                    }
-                }
-            }
-            else {
-                GameView.triggerAuction(lander, this, price);
-            }
-        }
-        if(lander == owner) {
-            String allHotels = "";
-            String setHouses = "";
-            for(int i = 0; i < set.length; i += 1) {
-                allHotels += "" + 5;
-                setHouses += "" + set[i].getHouses();
-            }
-            if(!allHotels.equals(setHouses)) {
-                if(this.houses >= 1) {
-                    while(true) {
-                        if(GameView.triggerYesNo(lander, "Do you want to build houses on this property set?")) {
-                            while(true) {
-                                int choice = GameView.triggerPickFromOptions(lander, "Which property would you like to build houses on?", set);
-                                
-                                if(set[choice].getHouses() != 5) {
-                                    break;
-                                }
-                                
-                                GameView.triggerErrorPopup(lander, "Sorry, but that property already has a hotel! You can't build on it anymore.");
-                            }
-                            String[] houseOptions = new String[5-houses];
-                            for(int i = 1; i < houseOptions.length; i += 1) {
-                                if(i == 1) {
-                                    houseOptions[i - 1] = new String ("1 House");
-                                }
-                                else {
-                                    houseOptions[i - 1] = new String ("" + i + " Houses");
-                                }
-                            }
-                            houseOptions[houseOptions.length-1] = "Hotel";
-                            int choice = GameView.triggerPickFromOptions(lander, "What would you like to build on this property?", houseOptions);
-                            if(GameView.triggerPurchase(lander, houseOptions[choice], (((index/10)+1)*50)*(choice + 1))) {
-                                houses = houses + choice + 1;
-                            }
-                        }
-                        else {
-                            break;
-                        }
-                        allHotels = "";
-                        setHouses = "";
-                        for(int i = 0; i < set.length; i += 1) {
-                            allHotels += "" + 5;
-                            setHouses += "" + set[i].getHouses();
-                        }
-                        if(allHotels.equals(setHouses)) {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        else {
-            GameView.triggerPayment(lander, owner, rent[houses]);
+        if (lander == null) {
+            return;
         }
     }
 
