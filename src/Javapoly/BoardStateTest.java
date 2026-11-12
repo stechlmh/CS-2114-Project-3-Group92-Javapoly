@@ -203,5 +203,9 @@ public class BoardStateTest extends TestCase
             nullSet = e;
         }
         assertTrue(nullSet instanceof IllegalArgumentException);
+
+        LinkedChain<String> emptyChain = new LinkedChain<String>();
+        emptyChain.addToEnd("First");
+        assertTrue(emptyChain.remove("First"));
     }
 }
