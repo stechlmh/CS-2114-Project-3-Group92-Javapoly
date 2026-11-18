@@ -120,4 +120,26 @@ public class QueueTest extends TestCase
         assertFalse(queue.isEmpty());
         assertEquals("B", queue.peek());
     }
+
+    /**
+     * Tests FIFO order across interleaved enqueue and dequeue operations.
+     */
+    public void testInterleavedEnqueueAndDequeueOrder()
+    {
+        queue.enqueue("First");
+        queue.enqueue("Second");
+        assertEquals("First", queue.dequeue());
+
+        queue.enqueue("Third");
+        queue.enqueue("Fourth");
+        assertEquals("Second", queue.dequeue());
+        assertEquals("Third", queue.peek());
+
+        queue.enqueue("Fifth");
+        assertEquals(3, queue.size());
+        assertEquals("Third", queue.dequeue());
+        assertEquals("Fourth", queue.dequeue());
+        assertEquals("Fifth", queue.dequeue());
+        assertTrue(queue.isEmpty());
+    }
 }

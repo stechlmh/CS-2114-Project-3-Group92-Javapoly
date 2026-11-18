@@ -92,10 +92,12 @@ public class BoardStateTest extends TestCase
         Space landed = board.movePlayer(player, 2);
         assertEquals(chanceSpace, landed);
         assertEquals(chanceSpace, player.getPosition());
+        assertEquals(1500, player.getMoney());
 
         Space wrapped = board.movePlayer(player, 4);
         assertEquals(chanceSpace, wrapped);
         assertEquals(chanceSpace, player.getPosition());
+        assertEquals(1700, player.getMoney());
 
         Player unsetPlayer = new Player("Bob", 1500, null);
         Space fromStart = board.movePlayer(unsetPlayer, 1);
@@ -106,6 +108,46 @@ public class BoardStateTest extends TestCase
         Player offBoardPlayer = new Player("Charlie", 1500, unlistedSpace);
         Space recovered = board.movePlayer(offBoardPlayer, 1);
         assertEquals(prop1, recovered);
+    }
+
+    /**
+     * Tests getSpaceByName for existing spaces, missing spaces, empty board,
+     * and invalid null or blank inputs.
+     */
+    public void testGetSpaceByName()
+    {
+        assertNull(board.getSpaceByName("GO"));
+
+        board.addSpace(goSpace);
+        board.addSpace(prop1);
+        board.addSpace(chanceSpace);
+
+        assertEquals(goSpace, board.getSpaceByName("GO"));
+        assertEquals(prop1, board.getSpaceByName("mediterranean ave"));
+        assertEquals(chanceSpace, board.getSpaceByName("Chance"));
+        assertNull(board.getSpaceByName("Boardwalk"));
+
+        Exception nullName = null;
+        try
+        {
+            board.getSpaceByName(null);
+        }
+        catch (Exception e)
+        {
+            nullName = e;
+        }
+        assertTrue(nullName instanceof IllegalArgumentException);
+
+        Exception emptyName = null;
+        try
+        {
+            board.getSpaceByName("   ");
+        }
+        catch (Exception e)
+        {
+            emptyName = e;
+        }
+        assertTrue(emptyName instanceof IllegalArgumentException);
     }
 
     /**

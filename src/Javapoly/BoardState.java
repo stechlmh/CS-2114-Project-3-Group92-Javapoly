@@ -86,11 +86,45 @@ public class BoardState
         for (int i = 0; i < steps; i++)
         {
             current = current.getNext();
+            if (current == start)
+            {
+                p.setMoney(p.getMoney() + 200);
+            }
         }
 
         Space landingSpace = current.getSpace();
         p.setPosition(landingSpace);
         return landingSpace;
+    }
+
+    /**
+     * Finds and returns the first space matching the given name
+     * (case-insensitive), or null if not found.
+     *
+     * @param name the space name to look up
+     * @return the matching space, or null if not found
+     * @throws IllegalArgumentException if name is null or empty
+     */
+    public Space getSpaceByName(String name)
+    {
+        if (name == null || name.trim().isEmpty())
+        {
+            throw new IllegalArgumentException("Space name cannot be null or empty");
+        }
+        if (start == null)
+        {
+            return null;
+        }
+        BoardNode current = start;
+        for (int i = 0; i < size; i++)
+        {
+            if (name.equalsIgnoreCase(current.getSpace().getName()))
+            {
+                return current.getSpace();
+            }
+            current = current.getNext();
+        }
+        return null;
     }
 
     /**
