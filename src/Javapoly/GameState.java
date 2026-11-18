@@ -308,14 +308,55 @@ public class GameState {
     }
 
     private void initializeBoard() {
-        board.addSpace(new Space("GO", 0, "GO"));
-        board.addSpace(new PropertySpace("Mediterranean Ave", 1, 60, 20));
-        board.addSpace(new CardSpace("Community Chest", 2, "COMMUNITY", communityDeck));
-        board.addSpace(new PropertySpace("Baltic Ave", 3, 60, 40));
-        board.addSpace(new PropertySpace("Oriental Ave", 4, 100, 50));
-        board.addSpace(new CardSpace("Chance", 5, "CHANCE", chanceDeck));
-        board.addSpace(new PropertySpace("Vermont Ave", 6, 100, 60));
-        board.addSpace(new PropertySpace("Boardwalk", 7, 400, 200));
+
+        // Bottom Row (0–9)
+       board.addSpace(new Space("GO", 0, "GO"));
+       board.addSpace(new PropertySpace("Mediterranean Avenue", 1, 60, 2));
+       board.addSpace(new CardSpace("Community Chest", 2, "COMMUNITY", communityDeck));
+       board.addSpace(new PropertySpace("Baltic Avenue", 3, 60, 4));
+       board.addSpace(new Space("Income Tax", 4, "TAX"));
+       board.addSpace(new PropertySpace("Reading Railroad", 5, 200, 25));
+       board.addSpace(new PropertySpace("Oriental Avenue", 6, 100, 6));
+       board.addSpace(new CardSpace("Chance", 7, "CHANCE", chanceDeck));
+       board.addSpace(new PropertySpace("Vermont Avenue", 8, 100, 6));
+       board.addSpace(new PropertySpace("Connecticut Avenue", 9, 120, 8));
+
+       // Left Row (10–19)
+       board.addSpace(new Space("Jail / Just Visiting", 10, "JAIL"));
+       board.addSpace(new PropertySpace("St. Charles Place", 11, 140, 10));
+       board.addSpace(new PropertySpace("Electric Company", 12, 150, 0));
+       board.addSpace(new PropertySpace("States Avenue", 13, 140, 10));
+       board.addSpace(new PropertySpace("Virginia Avenue", 14, 160, 12));
+       board.addSpace(new PropertySpace("Pennsylvania Railroad", 15, 200, 25));
+       board.addSpace(new PropertySpace("St. James Place", 16, 180, 14));
+       board.addSpace(new CardSpace("Community Chest", 17, "COMMUNITY", communityDeck));
+       board.addSpace(new PropertySpace("Tennessee Avenue", 18, 180, 14));
+       board.addSpace(new PropertySpace("New York Avenue", 19, 200, 16));
+
+       // Top Row (20–29)
+       board.addSpace(new Space("Free Parking", 20, "FREE_PARKING"));
+       board.addSpace(new PropertySpace("Kentucky Avenue", 21, 220, 18));
+       board.addSpace(new CardSpace("Chance", 22, "CHANCE", chanceDeck));
+       board.addSpace(new PropertySpace("Indiana Avenue", 23, 220, 18));
+       board.addSpace(new PropertySpace("Illinois Avenue", 24, 240, 20));
+       board.addSpace(new PropertySpace("B&O Railroad", 25, 200, 25));
+       board.addSpace(new PropertySpace("Atlantic Avenue", 26, 260, 22));
+       board.addSpace(new PropertySpace("Ventnor Avenue", 27, 260, 22));
+       board.addSpace(new PropertySpace("Water Works", 28, 150, 0));
+       board.addSpace(new PropertySpace("Marvin Gardens", 29, 280, 24));
+
+       // Right Row (30–39)
+       board.addSpace(new Space("Go To Jail", 30, "GO_TO_JAIL"));
+       board.addSpace(new PropertySpace("Pacific Avenue", 31, 300, 26));
+       board.addSpace(new PropertySpace("North Carolina Avenue", 32, 300, 26));
+       board.addSpace(new CardSpace("Community Chest", 33, "COMMUNITY", communityDeck));
+       board.addSpace(new PropertySpace("Pennsylvania Avenue", 34, 320, 28));
+       board.addSpace(new PropertySpace("Short Line", 35, 200, 25));
+       board.addSpace(new CardSpace("Chance", 36, "CHANCE", chanceDeck));
+       board.addSpace(new PropertySpace("Park Place", 37, 350, 35));
+       board.addSpace(new Space("Luxury Tax", 38, "TAX"));
+       board.addSpace(new PropertySpace("Boardwalk", 39, 400, 50));
+
     }
 
     //Helper method to initialize card decks
