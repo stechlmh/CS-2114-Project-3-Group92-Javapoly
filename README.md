@@ -9,94 +9,82 @@ Javapoly is a console Monopoly-style game for 2-4 players built using a circular
 - Pratham Singh
 - Thomas
 
-## How to Run the Model and Thin View
+## How to Compile and Run the Program and Tests
 
 All source and test files are in `src/Javapoly` under the `Javapoly` package.
 
-To run the thin console view through the controller:
-- In Eclipse: right-click `src/Javapoly/GameController.java` and select **Run As > Java Application**.
+To compile and run the console program through the controller and view:
+- In Eclipse or VS Code: right-click `src/Javapoly/GameController.java` and select **Run As > Java Application**.
 - From the command line:
 
     javac -d bin src/Javapoly/*.java
     java -cp bin Javapoly.GameController
 
-To exercise the Queue-backed model directly without any view:
-- In Eclipse (with `CS2-Support` on the build path): right-click `src/Javapoly/QueueTest.java`, `src/Javapoly/BoardStateTest.java`, or `src/Javapoly/GameStateTest.java` and select **Run As > JUnit Test**.
+To compile and run the JUnit tests (which exercise the Queue-backed model independently of the view):
+- In Eclipse or VS Code (with `CS2-Support` / `student.jar` on the build path): right-click `src/Javapoly/QueueTest.java`, `src/Javapoly/BoardStateTest.java`, `src/Javapoly/GameStateTest.java`, `src/Javapoly/GameControllerTest.java`, or `src/Javapoly/LinkedChainTest.java` and select **Run As > JUnit Test**.
 - From the command line:
 
     javac -cp path/to/student.jar -d bin src/Javapoly/*.java
     java -cp bin:path/to/student.jar junit.textui.TestRunner Javapoly.QueueTest
     java -cp bin:path/to/student.jar junit.textui.TestRunner Javapoly.BoardStateTest
     java -cp bin:path/to/student.jar junit.textui.TestRunner Javapoly.GameStateTest
+    java -cp bin:path/to/student.jar junit.textui.TestRunner Javapoly.GameControllerTest
+    java -cp bin:path/to/student.jar junit.textui.TestRunner Javapoly.LinkedChainTest
 
 ## Reflection
 
-What changed from our specification:
+How our design absorbed the Deliverable 4 change feature:
 
-- **Classes:** The specification listed `EventSpace` and `EventCard (Event)` alongside `Main`. In our repository we already had `CardSpace.java` and `Event.java` created during early setup, so we kept `CardSpace` as the event-space subclass of `Space` and added `EventCard` with the exact `getDescription()` and `getAmount()` methods from the spec so the `Queue<EventCard>` decks and `GameState` work as designed. Instead of a separate `Main` class, `GameController.main` starts the game directly, which prevented an extra wrapper file.
-- **Method signatures:** In `GameState`, Kyle initially wrote `buyProperty(Player, PropertySpace)` and `payRent(Player, PropertySpace)` while the spec table listed `buyProperty(PropertySpace)` and `payRent(PropertySpace)` for the active player. We kept both overloads so the single-parameter spec methods delegate to the active player without breaking existing calls. In `PropertySpace`, Maple initially added `getPrice()` and `int[] rent` for future house/hotel stretch goals; we added `getCost()`, `getRent()` (returning the current rent `int`), and a simpler constructor `PropertySpace(String, int, int, int)` so the MVP model matches the specification signatures. In `Queue`, we also added `pop()` as a helper alias for `dequeue()` because `GameState.drawCard` originally called `pop()`.
-- **Where validation lives:** Validation stayed where the specification placed it. `GameState.startGame` validates player count (2-4) with `IllegalArgumentException`, `BoardState.movePlayer` validates non-null player and die steps (1-6), `Queue.enqueue` rejects null items with `IllegalArgumentException`, `Queue.dequeue` and `Queue.peek` throw `NoSuchElementException` when empty, and `GameState.drawCard` throws `IllegalStateException` when a deck is empty. `GameController` catches bad console inputs (empty strings, non-numeric player counts, out-of-range counts, and invalid `y/n` or turn commands) and re-prompts through `GameView`.
-- **Test cases:** We added `QueueTest`, `BoardStateTest`, `GameStateTest`, and `GameControllerTest` following the test plan table, testing normal FIFO queueing, board wrap-around traversal, property purchases, rent bankruptcy, card cycling, and invalid inputs.
+- **Change feature implemented:** We implemented the **Jail & "Get Out of Jail Free" / Skip-Turn System** named in our Deliverable 3 Next Steps, along with the pass-GO $200 bonus and full 40-space board. Players are sent to `"Jail / Just Visiting"` when landing on `"Go To Jail"` or drawing `"Go to Jail. Go directly to Jail."` from the `Queue<EventCard>` Chance deck. On a jailed turn, the player can pay $50 bail, use a held `"Get Out of Jail Free"` card drawn from the Community Chest `Queue<EventCard>`, or wait up to 3 turns before automatic release.
+- **Classes actually touched vs. our Deliverable 3 prediction:**
+  - *Touched:* `Player` (added `inJail`, `jailTurns`, `getOutOfJailCards`, `isInJail()`, `setInJail(boolean)`, `getJailTurns()`, `incrementJailTurns()`, `getGetOutOfJailCards()`, and `setGetOutOfJailCards(int)`), `BoardState` (added `getSpaceByName(String)` and the pass-GO $200 check in `movePlayer`), `GameState` (added `sendToJail(Player)` and `handleJailTurn(Player, boolean)`, and updated `moveCurrentPlayer(int)`, `drawCard(String)`, and `initializeDeck(String)`), and `GameController` (updated `handleTurn()` to prompt jailed players and report jail transitions via `GameView`).
+  - *Unchanged:* Every class our Deliverable 3 prediction said should stay unchanged — `Queue`, `BoardNode`, and `PropertySpace` (as well as `LinkedChain`, `Space`, `CardSpace`, and `EventCard`) — required **zero edits**.
+  - *What matched and what surprised us:* Our D3 prediction matched the exact model and controller classes and method names we needed. The only mild surprise was that `GameView.java` did not need a new jail-specific method because `GameController` could pass the jail prompt and status strings directly to `GameView.getInput(String)`, `GameView.showMessage(String)`, and `GameView.showError(String)`.
 
-Did the model really stand alone?
+Did the change cross the model/view line?
 
-- Initially, `PropertySpace.triggerEffect` and `CardSpace.triggerEffect` had static calls to `GameView` (`GameView.triggerPurchase`, `GameView.triggerAuction`, `GameView.triggerPayment`) from an early draft before we finalized the MVC boundary in our spec. We removed those `GameView` calls from the model classes and moved user prompts into `GameController.handleTurn()`. Now `Queue`, `BoardNode`, `BoardState`, `GameState`, `Player`, `Space`, `PropertySpace`, `CardSpace`, and `EventCard` have zero references to `GameView` and run completely on their own in JUnit tests.
+- No. All jail state (`inJail`, `jailTurns`, `getOutOfJailCards`) and rules ($50 bail validation, automatic card usage, 3-turn wait counter, and moving the player to the Jail space) live strictly in `Player`, `BoardState`, and `GameState`. `GameView` keeps no copy of model state and has no references to `Player`, `GameState`, or `BoardState`. `GameController.handleTurn()` reads the model state, prompts the user through `GameView`, invokes `gameState.handleJailTurn(...)`, and sends formatted output back to `GameView`.
 
-What happened to our unknowns?
+What changed from our Deliverable 3 plan, and why:
 
-- **Randomized die application towards linked list & moving into spaces based off a linked list:** Figured out. `GameController.rollDie()` generates a 1-6 value and passes it to `GameState.moveCurrentPlayer(steps)`, which calls `BoardState.movePlayer(player, steps)` to traverse `next` references node-by-node around the circular list and update the player's `Space` reference.
-- **How to implement an engaging GUI for a normally physical board game:** Still open; we are using the text-based console view for the MVP first.
-- **How to implement the get out of jail system, keep Chance cards for later use, and create a trading/selling system:** Still open, as these are stretch goals beyond the MVP.
+- In `Player`, in addition to `isInJail()`, `setInJail(boolean)`, and `incrementJailTurns()`, we added `getJailTurns()`, `getGetOutOfJailCards()`, and `setGetOutOfJailCards(int)` (which throws `IllegalArgumentException` on negative counts) so `GameState` and `GameStateTest` can manage and verify held cards and turn counts without exposing fields.
+- In `GameController.handleTurn()`, if a player in jail chooses `"y"` to pay the $50 bail when they have less than $50, `GameState.handleJailTurn(current, true)` throws `IllegalArgumentException("Insufficient funds to pay $50 bail")`; `GameController` catches that bad-input error, displays it via `gameView.showError(...)`, and falls back to `handleJailTurn(current, false)` so the player does not get trapped in an unexitable prompt loop.
+- What design change would make the next feature cheaper: currently `GameState.moveCurrentPlayer(int)` and `GameState.drawCard(String)` inspect string descriptions/effect tags (`"GO_TO_JAIL"`, `"go to jail"`, `"get out of jail free"`). Refactoring space and card effects into a polymorphic `applyEffect(GameState, Player)` method on `Space` and `EventCard` would make adding future spaces or cards (such as tax spaces or "Advance to GO" cards) cheaper because new effects would not require new `if/else` checks in `GameState`.
 
-What doesn't work yet?
+What doesn't work yet:
 
-- Passing GO does not yet award a $200 bonus when wrapping around the board.
-- The board currently initializes a smaller set of spaces in `GameState.initializeBoard()` rather than the full Monopoly board layout.
-- Stretch goals (houses/hotels, auctions, trading, and jail) are not implemented yet.
+- Landing on `Income Tax` and `Luxury Tax` spaces currently logs the landing space without deducting a tax amount.
+- The property development stretch goal (buying houses/hotels) has data fields and rent tiers in `PropertySpace`, but the controller prompt to build houses during a player's turn is not wired into `GameController` yet.
 
 ## Next Steps
 
-What is left to finish the MVP (in order):
+What is left for the final build (in order):
 
-1. Expand `GameState.initializeBoard()` and `initializeDeck()` with the full set of board properties, tax spaces, and Chance/Community Chest cards.
-2. Add the pass-GO check in `BoardState.movePlayer()` / `GameState.moveCurrentPlayer()` so players collect money when wrapping past `start`.
-3. Refine `GameView` console formatting so all player balances and owned property lists print clearly at the end of each round.
-4. Run full multi-player console playthroughs to verify all bad-input prompts and bankruptcy edge cases.
-
-Change feature for Deliverable 4:
-
-- **Feature:** Jail & "Get Out of Jail Free" / Skip-Turn System (with a held card or 3-turn wait / $50 bail option). Landing on a "Go To Jail" space or drawing a "Go to Jail" `EventCard` moves the player to the Jail space and marks them as in jail; on their turn they can pay bail, use a held card, or roll to get out.
-- **Classes and methods that WILL need to change:**
-  - `Player`: add `inJail` (`boolean`), `jailTurns` (`int`), and `getOutOfJailCards` (`int`) fields along with `isInJail()`, `setInJail(boolean)`, and `incrementJailTurns()`.
-  - `BoardState`: add `getSpaceByName(String name)` so the model can move a player directly to the Jail space.
-  - `GameState`: add `sendToJail(Player)` and `handleJailTurn(Player, boolean payBail)` and update `moveCurrentPlayer(int)` / `drawCard(String)` to check for jail effects.
-  - `GameController`: update `handleTurn()` to check `current.isInJail()` and prompt the player via `GameView` whether to pay bail or roll before normal movement.
-  - `GameView`: display the jail prompt message passed from `GameController` using the existing `getInput(String)` and `showMessage(String)` methods.
-- **Classes that SHOULD NOT need to change:**
-  - `Queue`: the generic FIFO queue implementation stores `EventCard` objects regardless of their effect and does not need to change.
-  - `BoardNode`: node linking in the circular list does not change.
-  - `PropertySpace`: property cost, rent, and ownership rules are independent of jail state.
+1. Add tax space deductions (`Income Tax` $200 and `Luxury Tax` $100) in `GameState` when landing on `"TAX"` effect spaces, including bankruptcy handling if a player cannot afford the tax.
+2. Add a house/hotel build method in `GameState` and an optional build prompt in `GameController.handleTurn()` so players who own properties can increment `PropertySpace.setHouses(int)` and scale rent.
+3. Integrate `GameView.showAllPlayers(String[])` and `GameView.showPropertyInfo(...)` into `GameController.updateView()` for cleaner end-of-round summaries.
+4. Run final multi-player rehearsal playthroughs and lock in the 3-minute live demo script.
 
 Stretch goals:
 
-- **Committing to:** Customizable Game Rules / Jail mechanics (as our Deliverable 4 change feature) and Property Development System (houses/hotels, since fields are already stubbed in `PropertySpace`).
-- **Dropping:** Dynamic Disaster Events and Full Player-to-Player Trading/Auctions, to keep the scope manageable.
+- **Committing to:** Customizable Game Rules / Jail mechanics (completed in Deliverable 4) and Property Development System (houses/hotels using `PropertySpace` rent tiers).
+- **Dropping:** Dynamic Disaster Events and Full Player-to-Player Trading/Auctions, so we can keep the final build well-tested and reliable.
 
-New tests needed:
+What our 3-minute demo will show (timed path):
 
-- `GameStateTest`: test sending a player to jail, paying bail to leave jail, attempting to pay bail with insufficient funds (bad input), and cycling a "Go to Jail" card through `Queue<EventCard>`.
-- `BoardStateTest`: test `getSpaceByName` for existing spaces, missing spaces, and null input.
-- `PropertySpaceTest`: test building houses on a completed color set, rejecting house purchases with insufficient funds, and rejecting building past a hotel (5 houses).
+- **0:00–0:35 (Setup & Bad-Input Survival):** Launch `GameController.main`, enter bad player counts (`""`, `"abc"`, `1`, `5`) to show `GameController` and `GameView` catching errors and re-prompting without crashing, then start a 2-player game with $1500 each at `GO`.
+- **0:35–1:25 (Core Circular Board & Queue Deck MVP):** Roll to move across `BoardState`, purchase an unowned `PropertySpace`, show the next player paying rent on that property, and land on `Chance` / `Community Chest` to show `GameState.drawCard` dequeuing an `EventCard`, applying its balance change, and re-enqueuing it to the back of `Queue<EventCard>`.
+- **1:25–2:25 (Deliverable 4 Change Feature — Jail System):** Move a player onto `Go To Jail` (or draw the `"Go to Jail"` card) to show `GameState.sendToJail` moving them to `"Jail / Just Visiting"` via `BoardState.getSpaceByName`. On their next turn, enter an invalid jail input (`"maybe"`) to show bad-input recovery, decline bail (`"n"`) to show the jail turn counter (`Turn 1/3`), and then pay the $50 bail (`"y"`) or use a `"Get Out of Jail Free"` card on the next turn to leave jail and roll normally.
+- **2:25–3:00 (Pass-GO, Bankruptcy & JUnit Suite):** Show a player wrapping past `GO` to collect $200, trigger a bankruptcy to show properties resetting and winner announcement, and run `QueueTest`, `BoardStateTest`, `GameStateTest`, `GameControllerTest`, and `LinkedChainTest` passing in JUnit.
 
 Who does what:
 
 | Task | Owner |
 | --- | --- |
-| Expand board spaces and card decks in `GameState` | Kyle |
-| Pass-GO logic and `BoardState` lookup helpers + tests | Pratham |
-| Jail feature model methods (`Player`, `GameState`) | Pratham & Kyle |
-| Property development (houses/hotels) + `PropertySpace` tests | Maple |
-| Console UI polish and controller jail prompts + tests | Thomas |
+| Tax space deductions in `GameState` + unit tests | Kyle & Pratham |
+| House/hotel building logic and `PropertySpace` tests | Maple |
+| Wire `GameView` summary helpers into `GameController.updateView()` | Thomas |
+| Final 3-minute demo script rehearsal and full regression check | All team members |
 
 ## Attribution
 
@@ -110,15 +98,15 @@ Who does what:
 | Event.java | Maple | created skeleton |
 | EventCard.java | Pratham Singh | wrote from spec, GenAI-assisted |
 | Queue.java | Pratham Singh | wrote, GenAI-assisted |
-| QueueTest.java | Pratham Singh | wrote, GenAI-assisted |
+| QueueTest.java | Pratham Singh | wrote and added interleaved enqueue/dequeue order tests, GenAI-assisted |
 | BoardNode.java | Pratham Singh | wrote, GenAI-assisted |
-| BoardState.java | Pratham Singh | wrote, GenAI-assisted |
-| BoardStateTest.java | Pratham Singh | wrote, GenAI-assisted |
-| Player.java | Pratham Singh | wrote from spec fields and methods, GenAI-assisted |
-| GameState.java | Kyle, Pratham Singh | Kyle wrote core structure and methods; Pratham connected `Queue`, `BoardState`, and deck initialization, GenAI-assisted |
-| GameStateTest.java | Pratham Singh | wrote, GenAI-assisted |
-| GameController.java | Kyle, Pratham Singh | Kyle wrote class structure and method stubs; Pratham wired turn loop and bad-input handling, GenAI-assisted |
-| GameControllerTest.java | Pratham Singh | wrote, GenAI-assisted |
-| GameView.java | Thomas, Maple, Pratham Singh | Thomas & Maple designed view methods; Pratham implemented `Scanner` console methods from spec |
+| BoardState.java | Pratham Singh | wrote and added pass-GO $200 logic and `getSpaceByName`, GenAI-assisted |
+| BoardStateTest.java | Pratham Singh | wrote and added pass-GO and `getSpaceByName` normal/bad-input tests, GenAI-assisted |
+| Player.java | Pratham Singh | wrote and added D4 jail state fields and methods, GenAI-assisted |
+| GameState.java | Kyle, Pratham Singh | Kyle wrote core structure and 40-space board; Pratham added D4 jail methods (`sendToJail`, `handleJailTurn`) and jail cards, GenAI-assisted |
+| GameStateTest.java | Pratham Singh | wrote and added D4 jail and card cycling normal/bad-input tests, GenAI-assisted |
+| GameController.java | Kyle, Pratham Singh | Kyle wrote class structure; Pratham wired turn loop, D4 jail bail prompts, and bad-input handling, GenAI-assisted |
+| GameControllerTest.java | Pratham Singh | wrote and added D4 jail flow and view coverage tests, GenAI-assisted |
+| GameView.java | Thomas, Maple, Pratham Singh | Thomas & Maple designed and expanded view display methods; Pratham implemented `Scanner` console methods |
 
-GenAI: We used ChatGPT during the scope and specification phases to review our MVC boundaries, method signatures, and Big-O complexities. For Deliverable 3, we used AI to help implement `Queue`, `BoardNode`, `BoardState`, and the unit tests against the project specification, and to check which classes our Deliverable 4 Jail change feature would touch across the model/view boundary (confirming `Queue`, `BoardNode`, and `PropertySpace` would not need to change once `PropertySpace` was decoupled from `GameView`). We reviewed the code and ran the JUnit tests ourselves.
+GenAI: We used ChatGPT during the scope and specification phases to review our MVC boundaries, method signatures, and Big-O complexities. For Deliverable 3 and Deliverable 4, we used AI to help check which classes our Jail change feature would touch across the model/view boundary, draft candidate JUnit tests (including interleaved enqueue/dequeue checks on `Queue`, `getSpaceByName`, `sendToJail`, and `handleJailTurn` bad-input cases), and verify branch coverage. We reviewed and tested all code ourselves to confirm the tests target our model contract rather than view details.
