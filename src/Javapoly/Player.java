@@ -19,6 +19,9 @@ public class Player
     private Space position;
     private List<PropertySpace> ownedProperties;
     private boolean isBankrupt;
+    private boolean inJail;
+    private int jailTurns;
+    private int getOutOfJailCards;
 
     //~ Constructors ..........................................................
     /**
@@ -53,6 +56,9 @@ public class Player
         this.position = position;
         this.ownedProperties = new ArrayList<PropertySpace>();
         this.isBankrupt = false;
+        this.inJail = false;
+        this.jailTurns = 0;
+        this.getOutOfJailCards = 0;
     }
 
     //~Public  Methods ........................................................
@@ -144,5 +150,72 @@ public class Player
     public void setBankrupt(boolean isBankrupt)
     {
         this.isBankrupt = isBankrupt;
+    }
+
+    /**
+     * Returns whether the player is currently in jail.
+     *
+     * @return true if in jail, false otherwise
+     */
+    public boolean isInJail()
+    {
+        return inJail;
+    }
+
+    /**
+     * Sets whether the player is in jail and resets jail turns when released.
+     *
+     * @param inJail true if in jail, false otherwise
+     */
+    public void setInJail(boolean inJail)
+    {
+        this.inJail = inJail;
+        if (!inJail)
+        {
+            this.jailTurns = 0;
+        }
+    }
+
+    /**
+     * Returns the number of turns spent in jail during the current stay.
+     *
+     * @return the jail turn count
+     */
+    public int getJailTurns()
+    {
+        return jailTurns;
+    }
+
+    /**
+     * Increments the number of turns spent in jail by one.
+     */
+    public void incrementJailTurns()
+    {
+        this.jailTurns++;
+    }
+
+    /**
+     * Returns the number of Get Out of Jail Free cards held by the player.
+     *
+     * @return held card count
+     */
+    public int getGetOutOfJailCards()
+    {
+        return getOutOfJailCards;
+    }
+
+    /**
+     * Sets the number of Get Out of Jail Free cards held by the player.
+     *
+     * @param getOutOfJailCards the new card count
+     * @throws IllegalArgumentException if getOutOfJailCards is negative
+     */
+    public void setGetOutOfJailCards(int getOutOfJailCards)
+    {
+        if (getOutOfJailCards < 0)
+        {
+            throw new IllegalArgumentException("Card count cannot be negative");
+        }
+        this.getOutOfJailCards = getOutOfJailCards;
     }
 }
