@@ -72,7 +72,71 @@ public class GameState {
         if (current.isBankrupt()) {
             throw new IllegalStateException("Bankrupt player cannot move");
         }
-        return board.movePlayer(current, steps);
+        Space landed = board.movePlayer(current, steps);
+        if ("GO_TO_JAIL".equalsIgnoreCase(landed.getEffect())) {
+            sendToJail(current);
+            return current.getPosition();
+        }
+        return landed;
+    }
+
+    /**
+     * Sends the specified player directly to the Jail space and marks them
+     * as in jail.
+     *
+     * @param player the player to send to jail
+     * @throws IllegalArgumentException if player is null
+     */
+    public void sendToJail(Player player) {
+        if (player == null) {
+            throw new IllegalArgumentException("Player cannot be null");
+        }
+        if (board != null) {
+            Space jailSpace = board.getSpaceByName("Jail / Just Visiting");
+            if (jailSpace != null) {
+                player.setPosition(jailSpace);
+            }
+        }
+        player.setInJail(false);
+        player.setInJail(true);
+    }
+
+    /**
+     * Resolves a jail turn for the given player by paying $50 bail, using a
+     * held Get Out of Jail Free card, or waiting up to 3 turns.
+     *
+     * @param player the player in jail
+     * @param payBail true if the player chooses to pay $50 bail
+     * @return true if the player is released from jail, false if still in jail
+     * @throws IllegalArgumentException if player is null or cannot afford bail
+     * @throws IllegalStateException if player is not currently in jail
+     */
+    public boolean handleJailTurn(Player player, boolean payBail) {
+        if (player == null) {
+            throw new IllegalArgumentException("Player cannot be null");
+        }
+        if (!player.isInJail()) {
+            throw new IllegalStateException("Player is not in jail");
+        }
+        if (payBail) {
+            if (player.getMoney() < 50) {
+                throw new IllegalArgumentException("Insufficient funds to pay $50 bail");
+            }
+            player.setMoney(player.getMoney() - 50);
+            player.setInJail(false);
+            return true;
+        }
+        if (player.getGetOutOfJailCards() > 0) {
+            player.setGetOutOfJailCards(player.getGetOutOfJailCards() - 1);
+            player.setInJail(false);
+            return true;
+        }
+        player.incrementJailTurns();
+        if (player.getJailTurns() >= 3) {
+            player.setInJail(false);
+            return true;
+        }
+        return false;
     }
 
     // ----------------------------------------------------------
@@ -186,6 +250,14 @@ public class GameState {
 
         EventCard card = targetDeck.dequeue();
         targetDeck.enqueue(card);
+
+        String descLower = card.getDescription().toLowerCase();
+        if (descLower.contains("go to jail")) {
+            sendToJail(current);
+        }
+        else if (descLower.contains("get out of jail free")) {
+            current.setGetOutOfJailCards(current.getGetOutOfJailCards() + 1);
+        }
 
         int newBalance = current.getMoney() + card.getAmount();
         if (newBalance < 0) {
@@ -367,12 +439,14 @@ public class GameState {
             deck.enqueue(new EventCard("Speeding fine $15.", -15));
             deck.enqueue(new EventCard("Your building loan matures. Collect $150.", 150));
             deck.enqueue(new EventCard("Pay poor tax of $15.", -15));
+            deck.enqueue(new EventCard("Go to Jail. Go directly to Jail.", 0));
         }
         else {
             deck.enqueue(new EventCard("Bank error in your favor. Collect $200.", 200));
             deck.enqueue(new EventCard("Doctor's fees. Pay $50.", -50));
             deck.enqueue(new EventCard("From sale of stock you get $50.", 50));
             deck.enqueue(new EventCard("Pay hospital fees of $100.", -100));
+            deck.enqueue(new EventCard("Get Out of Jail Free.", 0));
         }
         return deck;
     }

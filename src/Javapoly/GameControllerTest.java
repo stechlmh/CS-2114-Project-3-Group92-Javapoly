@@ -46,7 +46,7 @@ public class GameControllerTest extends TestCase
         String input = "2\n\nmaybe\ny\nroll\nn\nbadcmd\nroll\nyes\nroll\nno\n";
         GameState state = new GameState();
         GameView view = new GameView(new Scanner(input));
-        FixedRandom fixedDie = new FixedRandom(new int[] { 0, 2, 2, 0 });
+        FixedRandom fixedDie = new FixedRandom(new int[] { 0, 2, 4, 0 });
         GameController controller = new GameController(state, view, fixedDie);
 
         controller.runGame();
@@ -82,21 +82,22 @@ public class GameControllerTest extends TestCase
         p2.setPosition(s2.getBoard().getStartSpace());
         p2.setMoney(1500);
         cBuyNull.handleTurn();
-        assertEquals(1480, p2.getMoney());
+        assertEquals(1498, p2.getMoney());
 
-        p2.setPosition(s2.getBoard().getStartSpace());
-        GameController cChance = new GameController(s2, new GameView(new Scanner("")), new FixedRandom(new int[] { 4 }));
+        Space oriental = s2.getBoard().getSpaceByName("Oriental Avenue");
+        p2.setPosition(oriental);
+        GameController cChance = new GameController(s2, new GameView(new Scanner("")), new FixedRandom(new int[] { 0 }));
         cChance.handleTurn();
 
         while (!s2.getChanceDeck().isEmpty())
         {
             s2.getChanceDeck().dequeue();
         }
-        p2.setPosition(s2.getBoard().getStartSpace());
+        p2.setPosition(oriental);
         cChance.handleTurn();
 
         s2.getChanceDeck().enqueue(new EventCard("Big fine", -5000));
-        p2.setPosition(s2.getBoard().getStartSpace());
+        p2.setPosition(oriental);
         p2.setMoney(10);
         cChance.handleTurn();
         assertTrue(p2.isBankrupt());
@@ -121,11 +122,11 @@ public class GameControllerTest extends TestCase
 
         GameState customBoardState = new GameState();
         customBoardState.startGame(2);
-        customBoardState.getBoard().addSpace(new Space("AltChance", 8, "CHANCE"));
-        customBoardState.getBoard().addSpace(new Space("AltComm", 9, "COMMUNITY"));
-        customBoardState.getBoard().addSpace(new Space("FreeParking", 10, "FREE"));
+        customBoardState.getBoard().addSpace(new Space("AltChance", 40, "CHANCE"));
+        customBoardState.getBoard().addSpace(new Space("AltComm", 41, "COMMUNITY"));
+        customBoardState.getBoard().addSpace(new Space("FreeParking", 42, "FREE"));
         Player cp = customBoardState.getCurrentPlayer();
-        Space boardWalk = customBoardState.getBoard().getStartNode().getNext().getNext().getNext().getNext().getNext().getNext().getNext().getSpace();
+        Space boardWalk = customBoardState.getBoard().getSpaceByName("Boardwalk");
         cp.setPosition(boardWalk);
         GameController cAlt = new GameController(customBoardState, new GameView(new Scanner("")), new FixedRandom(new int[] { 0, 0, 0 }));
         cAlt.handleTurn();
@@ -149,7 +150,7 @@ public class GameControllerTest extends TestCase
             public void startGame()
             {
                 super.startGame();
-                state.getPlayers()[1].setMoney(5);
+                state.getPlayers()[1].setMoney(1);
             }
         };
         winController.runGame();
@@ -166,6 +167,78 @@ public class GameControllerTest extends TestCase
         {
             System.setIn(originalIn);
         }
+    }
+
+    /**
+     * Tests GameController jail turn handling and GameView display methods.
+     */
+    public void testJailTurnsAndViewMethods()
+    {
+        GameState state = new GameState();
+        state.startGame(2);
+        Player p1 = state.getCurrentPlayer();
+
+        p1.setPosition(state.getBoard().getSpaceByName("Marvin Gardens"));
+        GameController goToJailCtrl = new GameController(state,
+            new GameView(new Scanner("")), new FixedRandom(new int[] { 0 }));
+        goToJailCtrl.handleTurn();
+        assertTrue(p1.isInJail());
+
+        GameController stayJailCtrl = new GameController(state,
+            new GameView(new Scanner("maybe\nn\nno\n\n")),
+            new FixedRandom(new int[] { 0 }));
+        stayJailCtrl.handleTurn();
+        assertTrue(p1.isInJail());
+        assertEquals(1, p1.getJailTurns());
+
+        stayJailCtrl.handleTurn();
+        assertTrue(p1.isInJail());
+        assertEquals(2, p1.getJailTurns());
+
+        stayJailCtrl.handleTurn();
+        assertFalse(p1.isInJail());
+
+        state.sendToJail(p1);
+        p1.setPosition(state.getBoard().getStartSpace());
+        GameController payBailCtrl = new GameController(state,
+            new GameView(new Scanner("y\nn\nyes\nn\n")),
+            new FixedRandom(new int[] { 0 }));
+        payBailCtrl.handleTurn();
+        assertFalse(p1.isInJail());
+
+        state.sendToJail(p1);
+        p1.setPosition(state.getBoard().getStartSpace());
+        payBailCtrl.handleTurn();
+        assertFalse(p1.isInJail());
+
+        state.sendToJail(p1);
+        p1.setMoney(10);
+        GameController brokeBailCtrl = new GameController(state,
+            new GameView(new Scanner("y\n")),
+            new FixedRandom(new int[] { 0 }));
+        brokeBailCtrl.handleTurn();
+        assertTrue(p1.isInJail());
+
+        p1.setGetOutOfJailCards(1);
+        GameController brokeWithCardCtrl = new GameController(state,
+            new GameView(new Scanner("y\n")),
+            new FixedRandom(new int[] { 0 }));
+        brokeWithCardCtrl.handleTurn();
+        assertFalse(p1.isInJail());
+
+        GameView view = new GameView(new Scanner("y\nyes\nn\n"));
+        view.showPlayerStatus("Player 1", 1500, "GO");
+        view.showDiceResult(4, "Income Tax");
+        view.showPropertyInfo("Baltic Ave", 60, 4, "Unowned");
+        view.showCardEffect("Dividend", 50);
+        view.showCardEffect("Fine", -15);
+        view.showAllPlayers(new String[] { "Player 1: $1500" });
+        view.showAllPlayers(null);
+        view.showWinner("Player 1");
+        assertTrue(view.promptBuyProperty("Baltic Ave", 60));
+        assertTrue(view.promptBuyProperty("Baltic Ave", 60));
+        assertFalse(view.promptBuyProperty("Baltic Ave", 60));
+        assertFalse(view.promptBuyProperty("Baltic Ave", 60));
     }
 
     private static class FixedRandom extends Random

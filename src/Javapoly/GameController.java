@@ -120,10 +120,66 @@ public class GameController
     public void handleTurn()
     {
         Player current = gameState.getCurrentPlayer();
+        if (current.isInJail())
+        {
+            while (true)
+            {
+                String jailChoice = gameView.getInput(current.getName()
+                    + " is in Jail. Pay $50 bail to leave now? (y/n):");
+                if (jailChoice == null || "n".equalsIgnoreCase(jailChoice)
+                    || "no".equalsIgnoreCase(jailChoice))
+                {
+                    boolean released = gameState.handleJailTurn(current, false);
+                    if (released)
+                    {
+                        gameView.showMessage(current.getName()
+                            + " is released from Jail!");
+                        break;
+                    }
+                    gameView.showMessage(current.getName()
+                        + " remains in Jail (Turn " + current.getJailTurns()
+                        + "/3).");
+                    updateView();
+                    return;
+                }
+                else if ("y".equalsIgnoreCase(jailChoice)
+                    || "yes".equalsIgnoreCase(jailChoice))
+                {
+                    try
+                    {
+                        gameState.handleJailTurn(current, true);
+                        gameView.showMessage(current.getName()
+                            + " paid $50 bail and left Jail!");
+                        break;
+                    }
+                    catch (IllegalArgumentException e)
+                    {
+                        gameView.showError(e.getMessage());
+                        boolean released = gameState.handleJailTurn(current, false);
+                        if (!released)
+                        {
+                            updateView();
+                            return;
+                        }
+                        break;
+                    }
+                }
+                else
+                {
+                    gameView.showError("Invalid option. Enter y or n.");
+                }
+            }
+        }
         int roll = rollDie();
         Space landed = gameState.moveCurrentPlayer(roll);
         gameView.showMessage(current.getName() + " rolled " + roll
             + " and landed on " + landed.getName());
+        if (current.isInJail())
+        {
+            gameView.showMessage(current.getName() + " was sent to Jail!");
+            updateView();
+            return;
+        }
 
         if (landed instanceof PropertySpace)
         {

@@ -459,4 +459,135 @@ public class GameStateTest extends TestCase
         cs.triggerEffect(namedPlayer);
         assertEquals(before + 25, namedPlayer.getMoney());
     }
+
+    /**
+     * Tests sendToJail, handleJailTurn (bail, cards, 3-turn wait, bad inputs),
+     * landing on Go To Jail, and cycling jail EventCards through Queue.
+     */
+    public void testJailMechanicsAndCards() throws Exception
+    {
+        Exception nullSend = null;
+        try
+        {
+            state.sendToJail(null);
+        }
+        catch (Exception e)
+        {
+            nullSend = e;
+        }
+        assertTrue(nullSend instanceof IllegalArgumentException);
+
+        Player standalone = new Player("Solo", 500, null);
+        state.sendToJail(standalone);
+        assertTrue(standalone.isInJail());
+
+        state.startGame(2);
+        Player p1 = state.getCurrentPlayer();
+
+        Exception notInJail = null;
+        try
+        {
+            state.handleJailTurn(p1, false);
+        }
+        catch (Exception e)
+        {
+            notInJail = e;
+        }
+        assertTrue(notInJail instanceof IllegalStateException);
+
+        Exception nullHandle = null;
+        try
+        {
+            state.handleJailTurn(null, true);
+        }
+        catch (Exception e)
+        {
+            nullHandle = e;
+        }
+        assertTrue(nullHandle instanceof IllegalArgumentException);
+
+        Exception negCards = null;
+        try
+        {
+            p1.setGetOutOfJailCards(-1);
+        }
+        catch (Exception e)
+        {
+            negCards = e;
+        }
+        assertTrue(negCards instanceof IllegalArgumentException);
+
+        state.sendToJail(p1);
+        assertTrue(p1.isInJail());
+        assertEquals("Jail / Just Visiting", p1.getPosition().getName());
+        assertEquals(0, p1.getJailTurns());
+
+        p1.setMoney(30);
+        Exception brokeBail = null;
+        try
+        {
+            state.handleJailTurn(p1, true);
+        }
+        catch (Exception e)
+        {
+            brokeBail = e;
+        }
+        assertTrue(brokeBail instanceof IllegalArgumentException);
+        assertTrue(p1.isInJail());
+
+        p1.setMoney(500);
+        assertTrue(state.handleJailTurn(p1, true));
+        assertFalse(p1.isInJail());
+        assertEquals(450, p1.getMoney());
+
+        state.sendToJail(p1);
+        p1.setGetOutOfJailCards(1);
+        assertEquals(1, p1.getGetOutOfJailCards());
+        assertTrue(state.handleJailTurn(p1, false));
+        assertFalse(p1.isInJail());
+        assertEquals(0, p1.getGetOutOfJailCards());
+
+        state.sendToJail(p1);
+        assertFalse(state.handleJailTurn(p1, false));
+        assertEquals(1, p1.getJailTurns());
+        assertTrue(p1.isInJail());
+        assertFalse(state.handleJailTurn(p1, false));
+        assertEquals(2, p1.getJailTurns());
+        assertTrue(p1.isInJail());
+        assertTrue(state.handleJailTurn(p1, false));
+        assertFalse(p1.isInJail());
+        assertEquals(0, p1.getJailTurns());
+
+        Space marvin = state.getBoard().getSpaceByName("Marvin Gardens");
+        p1.setPosition(marvin);
+        Space destination = state.moveCurrentPlayer(1);
+        assertTrue(p1.isInJail());
+        assertEquals("Jail / Just Visiting", destination.getName());
+        p1.setInJail(false);
+
+        while (!state.getChanceDeck().peek().getDescription().toLowerCase().contains("go to jail"))
+        {
+            state.drawCard("chance");
+        }
+        EventCard jailCard = state.drawCard("chance");
+        assertTrue(jailCard.getDescription().toLowerCase().contains("go to jail"));
+        assertTrue(p1.isInJail());
+
+        while (!state.getCommunityDeck().peek().getDescription().toLowerCase().contains("get out of jail free"))
+        {
+            state.drawCard("community");
+        }
+        EventCard freeCard = state.drawCard("community");
+        assertTrue(freeCard.getDescription().toLowerCase().contains("get out of jail free"));
+        assertEquals(1, p1.getGetOutOfJailCards());
+
+        BoardState noJailBoard = new BoardState();
+        noJailBoard.addSpace(new Space("GO", 0, "GO"));
+        Field boardField = GameState.class.getDeclaredField("board");
+        boardField.setAccessible(true);
+        boardField.set(state, noJailBoard);
+        p1.setInJail(false);
+        state.sendToJail(p1);
+        assertTrue(p1.isInJail());
+    }
 }
